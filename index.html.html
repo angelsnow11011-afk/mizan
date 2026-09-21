@@ -375,6 +375,15 @@
     font-weight:700;cursor:pointer;padding:2px 0;text-decoration:underline;
   }
 
+  .type-toggle{display:flex;gap:8px}
+  .type-btn{
+    flex:1;padding:10px 8px;border-radius:9px;border:1px solid var(--line);background:var(--paper);
+    font-family:'Tajawal',sans-serif;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;
+  }
+  .type-btn.active{border-color:var(--gold);color:var(--ink);background:var(--good-bg)}
+  .debt-item.receivable{border-right:4px solid var(--good)}
+  .di-rem.receivable-amt{color:var(--ink-2)}
+
   :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -599,11 +608,11 @@
       <button class="back-link" id="closeDebtsBtn" type="button">‹ الرئيسية</button>
       <h2>الديون</h2>
     </div>
-    <p class="sub">سجّل أي مبلغ عليك، والتطبيق يفكّرك بيه أول مرة تفتحه كل يوم.</p>
+    <p class="sub">سجّل أي مبلغ عليك أو ليك، والتطبيق يفكّرك بيه أول مرة تفتحه كل يوم.</p>
 
     <div class="card" style="margin-bottom:16px">
       <div class="settings-row" style="padding:0">
-        <label>اخصم السداد من رصيدي</label>
+        <label>اخصم سداد الديون اللي عليّ من رصيدي</label>
         <label class="switch">
           <input type="checkbox" id="debtDeductToggle" checked>
           <span class="slider-toggle"></span>
@@ -611,12 +620,23 @@
       </div>
     </div>
 
-    <div id="debtsList"></div>
+    <div class="section-title">الديون اللي عليّا</div>
+    <div id="debtsListOwe"></div>
+
+    <div class="section-title">فلوس ليّا عند الناس</div>
+    <div id="debtsListOwed"></div>
 
     <div class="section-title">دين جديد</div>
     <div class="card">
       <div class="field">
-        <label>الدين لمين؟</label>
+        <label>النوع</label>
+        <div class="type-toggle">
+          <button type="button" class="type-btn active" id="debtTypeOweBtn" data-type="owe">عليّا (أنا مديون)</button>
+          <button type="button" class="type-btn" id="debtTypeOwedBtn" data-type="owed">ليّا (حد مديون لي)</button>
+        </div>
+      </div>
+      <div class="field">
+        <label id="debtNameLabel">الدين لمين؟</label>
         <input type="text" id="debtName" placeholder="مثال: أحمد، المحل، قسط الموبايل">
       </div>
       <div class="row2">
@@ -625,7 +645,7 @@
           <input type="number" id="debtAmount" placeholder="0">
         </div>
         <div class="field">
-          <label>موعد السداد (اختياري)</label>
+          <label id="debtDueLabel">موعد السداد (اختياري)</label>
           <input type="date" id="debtDue">
         </div>
       </div>
@@ -936,7 +956,14 @@
     <h2>الديون</h2>
     <p class="sub" id="quickDebtsSummary">مفيش ديون مسجلة</p>
     <div class="field">
-      <label>الدين لمين؟</label>
+      <label>النوع</label>
+      <div class="type-toggle">
+        <button type="button" class="type-btn active" id="quickDebtTypeOweBtn" data-type="owe">عليّا</button>
+        <button type="button" class="type-btn" id="quickDebtTypeOwedBtn" data-type="owed">ليّا</button>
+      </div>
+    </div>
+    <div class="field">
+      <label id="quickDebtNameLabel">الدين لمين؟</label>
       <input type="text" id="quickDebtName" placeholder="مثال: أحمد، المحل">
     </div>
     <div class="field">
@@ -1883,19 +1910,33 @@ document.getElementById('quickAddConfirmBtn').addEventListener('click', async ()
   showToast('اتضافت الفلوس' + autoSaveMsg);
 });
 
+let quickDebtType = 'owe';
+function setQuickDebtType(type){
+  quickDebtType = type;
+  document.getElementById('quickDebtTypeOweBtn').classList.toggle('active', type === 'owe');
+  document.getElementById('quickDebtTypeOwedBtn').classList.toggle('active', type === 'owed');
+  document.getElementById('quickDebtNameLabel').textContent = type === 'owe' ? 'الدين لمين؟' : 'الفلوس عند مين؟';
+}
+document.getElementById('quickDebtTypeOweBtn').addEventListener('click', ()=> setQuickDebtType('owe'));
+document.getElementById('quickDebtTypeOwedBtn').addEventListener('click', ()=> setQuickDebtType('owed'));
+
 function renderQuickDebtsSummary(){
-  const total = totalDebtRemaining();
-  const open = debts.filter(d=> debtRemaining(d) > 0).length;
-  document.getElementById('quickDebtsSummary').textContent =
-    total > 0 ? ('عليك ' + fmtMoney(total) + ' في ' + open + ' دين') : 'مفيش ديون مسجلة عليك دلوقتي';
+  const owe = totalOwed();
+  const owed = totalReceivable();
+  const openOwe = debts.filter(d=> (d.type || 'owe') === 'owe' && debtRemaining(d) > 0).length;
+  const openOwed = debts.filter(d=> d.type === 'owed' && debtRemaining(d) > 0).length;
+  const parts = [];
+  if(owe > 0) parts.push('عليك ' + fmtMoney(owe) + ' في ' + openOwe + ' دين');
+  if(owed > 0) parts.push('ليك ' + fmtMoney(owed) + ' عند ' + openOwed + ' حد');
+  document.getElementById('quickDebtsSummary').textContent = parts.length ? parts.join(' · ') : 'مفيش ديون مسجلة دلوقتي';
 }
 document.getElementById('quickDebtAddBtn').addEventListener('click', async ()=>{
   const name = document.getElementById('quickDebtName').value.trim();
   const amount = Number(document.getElementById('quickDebtAmount').value);
   const due = document.getElementById('quickDebtDue').value;
-  if(!name){ showToast('اكتب الدين لمين'); return; }
+  if(!name){ showToast(quickDebtType === 'owe' ? 'اكتب الدين لمين' : 'اكتب الفلوس عند مين'); return; }
   if(!amount || amount <= 0){ showToast('اكتب المبلغ'); return; }
-  debts.push({ id: Date.now().toString(), name, amount, paid: 0, due: due || null, note: '' });
+  debts.push({ id: Date.now().toString(), name, amount, paid: 0, due: due || null, note: '', type: quickDebtType });
   document.getElementById('quickDebtName').value = '';
   document.getElementById('quickDebtAmount').value = '';
   document.getElementById('quickDebtDue').value = '';
@@ -1966,7 +2007,9 @@ document.getElementById('searchToggleBtn').addEventListener('click', ()=>{
 
 // ---------- DEBTS ----------
 function debtRemaining(d){ return Math.max(0, Number(d.amount) - Number(d.paid || 0)); }
-function totalDebtRemaining(){ return debts.reduce((s,d)=> s + debtRemaining(d), 0); }
+function totalOwed(){ return debts.filter(d=> (d.type || 'owe') === 'owe').reduce((s,d)=> s + debtRemaining(d), 0); }
+function totalReceivable(){ return debts.filter(d=> d.type === 'owed').reduce((s,d)=> s + debtRemaining(d), 0); }
+function totalDebtRemaining(){ return totalOwed(); } // للتوافق مع الأماكن القديمة اللي كانت بتحسب اللي عليك بس
 function gcalReminderLink(title, dateStr, details){
   if(!dateStr) return '';
   const d0 = dateStr.replace(/-/g,'');
@@ -1983,37 +2026,22 @@ function daysUntil(dateStr){
   const today = new Date(); today.setHours(0,0,0,0);
   return Math.round((due - today) / 86400000);
 }
-function nextDueDebt(){
-  const open = debts.filter(d=> debtRemaining(d) > 0 && d.due);
+function nextDueDebt(type){
+  const open = debts.filter(d=> debtRemaining(d) > 0 && d.due && (d.type || 'owe') === type);
   if(open.length === 0) return null;
   return open.sort((a,b)=> new Date(a.due) - new Date(b.due))[0];
 }
 
-function renderDebts(){
-  const strip = document.getElementById('debtStrip');
-  const total = totalDebtRemaining();
-  if(total > 0){
-    strip.classList.remove('is-hidden');
-    document.getElementById('debtStripTotal').textContent = fmtMoney(total);
-    const next = nextDueDebt();
-    let sub = debts.filter(d=> debtRemaining(d) > 0).length + ' دين لسه عليك';
-    if(next){
-      const dd = daysUntil(next.due);
-      sub += ' · ' + next.name + (dd === null ? '' : (dd < 0 ? ' (متأخر ' + Math.abs(dd) + ' يوم)' : dd === 0 ? ' (النهاردة)' : ' (فاضل ' + dd + ' يوم)'));
-    }
-    document.getElementById('debtStripSub').textContent = sub;
-  } else {
-    strip.classList.add('is-hidden');
-  }
-
-  const list = document.getElementById('debtsList');
+function renderDebtList(listId, type){
+  const list = document.getElementById(listId);
   if(!list) return;
-  if(debts.length === 0){
-    list.innerHTML = '<div class="empty">مفيش ديون مسجلة — اكتب أول واحد تحت.</div>';
+  const items = debts.filter(d=> (d.type || 'owe') === type);
+  if(items.length === 0){
+    list.innerHTML = '<div class="empty">' + (type === 'owe' ? 'مفيش ديون عليك مسجلة.' : 'مفيش حد مديون لك دلوقتي.') + '</div>';
     return;
   }
   list.innerHTML = '';
-  [...debts].sort((a,b)=> debtRemaining(b) - debtRemaining(a)).forEach(d=>{
+  [...items].sort((a,b)=> debtRemaining(b) - debtRemaining(a)).forEach(d=>{
     const rem = debtRemaining(d);
     const pct = Math.min(100, Math.round((Number(d.paid || 0) / Number(d.amount)) * 100));
     const dd = daysUntil(d.due);
@@ -2023,24 +2051,29 @@ function renderDebts(){
       dueTxt = ' · <span class="' + (dd <= 3 ? 'due-soon' : '') + '">' + label + '</span>';
     }
     const box = document.createElement('div');
-    box.className = 'debt-item' + (rem === 0 ? ' done' : '');
-    const gcalUrl = d.due ? gcalReminderLink('سداد دين: ' + d.name, d.due, 'فاضل عليك ' + fmtMoney(rem) + ' — من تطبيق ميزان') : '';
+    box.className = 'debt-item' + (rem === 0 ? ' done' : '') + (type === 'owed' ? ' receivable' : '');
+    const gcalTitle = type === 'owe' ? ('سداد دين: ' + d.name) : ('استلام فلوس من: ' + d.name);
+    const gcalDetails = type === 'owe' ? ('فاضل عليك ' + fmtMoney(rem) + ' — من تطبيق ميزان') : ('ليك ' + fmtMoney(rem) + ' عند ' + d.name + ' — من تطبيق ميزان');
+    const gcalUrl = d.due ? gcalReminderLink(gcalTitle, d.due, gcalDetails) : '';
+    const doneLabel = type === 'owe' ? 'اتسدد ✓' : 'اتحصّل ✓';
+    const payLabel = type === 'owe' ? 'سدّد' : 'استلمت';
+    const payAllLabel = type === 'owe' ? 'سدّد الكل' : 'استلمت الكل';
     box.innerHTML =
       '<div class="di-top"><span class="di-name">' + escapeHtml(d.name) + '</span>' +
-      '<span class="di-rem' + (rem === 0 ? ' clear' : '') + '">' + (rem === 0 ? 'اتسدد ✓' : fmtMoney(rem)) + '</span></div>' +
-      '<div class="di-meta">الأصل ' + fmtMoney(Number(d.amount)) + ' · مدفوع ' + fmtMoney(Number(d.paid || 0)) + dueTxt +
+      '<span class="di-rem' + (rem === 0 ? ' clear' : (type === 'owed' ? ' receivable-amt' : '')) + '">' + (rem === 0 ? doneLabel : fmtMoney(rem)) + '</span></div>' +
+      '<div class="di-meta">الأصل ' + fmtMoney(Number(d.amount)) + ' · ' + (type === 'owe' ? 'مدفوع ' : 'اتحصّل ') + fmtMoney(Number(d.paid || 0)) + dueTxt +
       (d.note ? '<br>' + escapeHtml(d.note) : '') + '</div>' +
       '<div class="di-bar"><span style="width:' + pct + '%"></span></div>' +
       '<div class="di-actions">' +
       (rem > 0
-        ? '<input type="number" placeholder="مبلغ السداد" data-pay-input="' + d.id + '">' +
-          '<button class="small-btn" data-pay="' + d.id + '" type="button">سدّد</button>' +
-          '<button class="small-btn" data-payall="' + d.id + '" type="button">سدّد الكل</button>'
+        ? '<input type="number" placeholder="' + (type === 'owe' ? 'مبلغ السداد' : 'مبلغ الاستلام') + '" data-pay-input="' + d.id + '">' +
+          '<button class="small-btn" data-pay="' + d.id + '" type="button">' + payLabel + '</button>' +
+          '<button class="small-btn" data-payall="' + d.id + '" type="button">' + payAllLabel + '</button>'
         : '') +
       '<button class="del-btn" data-del-debt="' + d.id + '" aria-label="حذف" style="margin-right:auto">🗑</button>' +
       '</div>' +
       (gcalUrl && rem > 0
-        ? '<a class="goal-link" href="' + gcalUrl + '" target="_blank" rel="noopener" style="display:block;margin-top:8px">📅 فكّرني في تقويم جوجل يوم السداد</a>'
+        ? '<a class="goal-link" href="' + gcalUrl + '" target="_blank" rel="noopener" style="display:block;margin-top:8px">📅 فكّرني في تقويم جوجل يوم ال' + (type === 'owe' ? 'سداد' : 'استلام') + '</a>'
         : '');
     list.appendChild(box);
   });
@@ -2050,7 +2083,7 @@ function renderDebts(){
       const id = btn.getAttribute('data-pay');
       const input = list.querySelector('[data-pay-input="' + id + '"]');
       const val = Number(input.value);
-      if(!val || val <= 0){ showToast('اكتب مبلغ السداد'); return; }
+      if(!val || val <= 0){ showToast('اكتب المبلغ'); return; }
       await payDebt(id, val);
     });
   });
@@ -2067,37 +2100,79 @@ function renderDebts(){
       debts = debts.filter(x=> x.id !== id);
       await saveData();
       render();
-      showToast('اتشال الدين');
+      showToast('اتشال');
     });
   });
+}
+
+function renderDebts(){
+  const strip = document.getElementById('debtStrip');
+  const total = totalOwed();
+  if(total > 0){
+    strip.classList.remove('is-hidden');
+    document.getElementById('debtStripTotal').textContent = fmtMoney(total);
+    const next = nextDueDebt('owe');
+    let sub = debts.filter(d=> (d.type || 'owe') === 'owe' && debtRemaining(d) > 0).length + ' دين لسه عليك';
+    if(next){
+      const dd = daysUntil(next.due);
+      sub += ' · ' + next.name + (dd === null ? '' : (dd < 0 ? ' (متأخر ' + Math.abs(dd) + ' يوم)' : dd === 0 ? ' (النهاردة)' : ' (فاضل ' + dd + ' يوم)'));
+    }
+    document.getElementById('debtStripSub').textContent = sub;
+  } else {
+    strip.classList.add('is-hidden');
+  }
+
+  renderDebtList('debtsListOwe', 'owe');
+  renderDebtList('debtsListOwed', 'owed');
 }
 
 async function payDebt(id, amount){
   const d = debts.find(x=> x.id === id);
   if(!d) return;
+  const type = d.type || 'owe';
   const pay = Math.min(amount, debtRemaining(d));
   if(pay <= 0) return;
   d.paid = Number(d.paid || 0) + pay;
-  if(debtDeduct){
+  if(type === 'owe'){
+    if(debtDeduct){
+      history.push({
+        type:'expense', name:'سداد دين · ' + d.name, category:'ديون',
+        amount: pay, date: new Date().toISOString(), note:'', tag:'essential'
+      });
+      balance = computeBalance();
+    }
+  } else {
     history.push({
-      type:'expense', name:'سداد دين · ' + d.name, category:'ديون',
-      amount: pay, date: new Date().toISOString(), note:'', tag:'essential'
+      type:'income', name:'استلام فلوس · ' + d.name, source:'دين مسترجع',
+      amount: pay, date: new Date().toISOString(), note:''
     });
     balance = computeBalance();
   }
   await saveData();
   render();
-  showToast(debtRemaining(d) === 0 ? 'مبروك، الدين اتسدد بالكامل 🎉' : 'اتسجل سداد ' + fmtMoney(pay));
+  const doneMsg = type === 'owe' ? 'مبروك، الدين اتسدد بالكامل 🎉' : 'مبروك، استلمت فلوسك بالكامل 🎉';
+  showToast(debtRemaining(d) === 0 ? doneMsg : 'اتسجل ' + fmtMoney(pay));
 }
+
+let newDebtType = 'owe';
+function setNewDebtType(type){
+  newDebtType = type;
+  document.getElementById('debtTypeOweBtn').classList.toggle('active', type === 'owe');
+  document.getElementById('debtTypeOwedBtn').classList.toggle('active', type === 'owed');
+  document.getElementById('debtNameLabel').textContent = type === 'owe' ? 'الدين لمين؟' : 'الفلوس عند مين؟';
+  document.getElementById('debtDueLabel').textContent = type === 'owe' ? 'موعد السداد (اختياري)' : 'موعد الاستلام المتوقع (اختياري)';
+}
+document.getElementById('debtTypeOweBtn').addEventListener('click', ()=> setNewDebtType('owe'));
+document.getElementById('debtTypeOwedBtn').addEventListener('click', ()=> setNewDebtType('owed'));
 
 document.getElementById('addDebtBtn').addEventListener('click', async ()=>{
   const name = document.getElementById('debtName').value.trim();
   const amount = Number(document.getElementById('debtAmount').value);
   const due = document.getElementById('debtDue').value;
   const note = document.getElementById('debtNote').value.trim();
-  if(!name){ showToast('اكتب الدين لمين'); return; }
+  if(!name){ showToast(newDebtType === 'owe' ? 'اكتب الدين لمين' : 'اكتب الفلوس عند مين'); return; }
   if(!amount || amount <= 0){ showToast('اكتب المبلغ'); return; }
-  debts.push({ id: Date.now().toString(), name, amount, paid: 0, due: due || null, note: note || '' });
+  debts.push({ id: Date.now().toString(), name, amount, paid: 0, due: due || null, note: note || '', type: newDebtType });
   document.getElementById('debtName').value = '';
   document.getElementById('debtAmount').value = '';
   document.getElementById('debtDue').value = '';
@@ -2116,19 +2191,27 @@ document.getElementById('closeDebtsBtn').addEventListener('click', goHome);
 document.getElementById('menuDebts').addEventListener('click', ()=> openPage('debtsPage'));
 
 function checkDebtReminder(){
-  const total = totalDebtRemaining();
-  if(total <= 0) return;
+  const total = totalOwed();
+  const receivable = totalReceivable();
+  if(total <= 0 && receivable <= 0) return;
   const today = new Date().toDateString();
   if(lastDebtReminder === today) return;
   lastDebtReminder = today;
   saveData();
-  const next = nextDueDebt();
-  let msg = '🧾 فاكر؟ عليك ديون بإجمالي ' + fmtMoney(total);
-  if(next){
-    const dd = daysUntil(next.due);
-    if(dd !== null && dd < 0) msg += ' · ' + next.name + ' متأخر ' + Math.abs(dd) + ' يوم';
-    else if(dd === 0) msg += ' · ' + next.name + ' موعده النهاردة';
-    else if(dd !== null) msg += ' · أقرب موعد ' + next.name + ' بعد ' + dd + ' يوم';
+  let msg = '';
+  if(total > 0){
+    msg = '🧾 فاكر؟ عليك ديون بإجمالي ' + fmtMoney(total);
+    const next = nextDueDebt('owe');
+    if(next){
+      const dd = daysUntil(next.due);
+      if(dd !== null && dd < 0) msg += ' · ' + next.name + ' متأخر ' + Math.abs(dd) + ' يوم';
+      else if(dd === 0) msg += ' · ' + next.name + ' موعده النهاردة';
+      else if(dd !== null) msg += ' · أقرب موعد ' + next.name + ' بعد ' + dd + ' يوم';
+    }
+  }
+  if(receivable > 0){
+    const line2 = 'وليك ' + fmtMoney(receivable) + ' عند ناس تانية';
+    msg = msg ? (msg + ' — ' + line2) : ('💰 ' + line2);
   }
   setTimeout(()=> showToast(msg), 1200);
 }
