@@ -1336,7 +1336,8 @@ async function loadData(){
       debts = []; lastDebtReminder = null; debtDeduct = true;
     }
   }catch(e){
-    showToast('حصل خطأ في تحميل بياناتك، جرّب تحدّث الصفحة');
+    console.error('Firestore load error:', e);
+    showToast('خطأ في تحميل البيانات: ' + (e.code || e.message || e));
     balance = 0; history = []; initialized = false; budgets = {}; learned = {};
     currency = 'EGP'; darkMode = false; lowBalanceThreshold = null;
     savingsGoals = []; recurring = []; recurAppliedMonths = {};
@@ -1379,7 +1380,8 @@ async function saveData(){
       debts, lastDebtReminder, debtDeduct
     });
   }catch(e){
-    showToast('حصل خطأ في الحفظ، تأكد إنك متصل بالإنترنت');
+    console.error('Firestore save error:', e);
+    showToast('خطأ في الحفظ: ' + (e.code || e.message || e));
   }
 }
 
