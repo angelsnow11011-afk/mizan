@@ -1726,8 +1726,8 @@ document.getElementById('saveEditTxBtn').addEventListener('click', async ()=>{
     h.source = name;
   } else {
     h.category = document.getElementById('editTxCat').value;
-    h.note = document.getElementById('editTxNote').value.trim() || undefined;
-    h.tag = document.getElementById('editTxTag').value || undefined;
+    h.note = document.getElementById('editTxNote').value.trim() || '';
+    h.tag = document.getElementById('editTxTag').value || '';
   }
   balance = computeBalance();
   await saveData();
@@ -1767,12 +1767,12 @@ document.getElementById('addBtn').addEventListener('click', async ()=>{
   const cat = document.getElementById('itemCat').value;
   const price = Number(document.getElementById('itemPrice').value);
   const note = document.getElementById('itemNote').value.trim();
-  const tag = document.getElementById('itemTag').value || undefined;
+  const tag = document.getElementById('itemTag').value || '';
 
   if(!name){ showToast('اكتب اسم المنتج'); return; }
   if(!price || price <= 0){ showToast('اكتب السعر'); return; }
 
-  history.push({type:'expense', name, category: cat, amount: price, date: new Date().toISOString(), note: note || undefined, tag});
+  history.push({type:'expense', name, category: cat, amount: price, date: new Date().toISOString(), note: note || '', tag});
   balance = computeBalance();
   learned[name.trim().toLowerCase()] = cat;
 
@@ -2346,7 +2346,7 @@ const PIE_COLORS = ['#B08A3E','#2E6B4F','#B23A34','#7A7364','#4A6FA5','#8E5B9E',
 function renderPieChart(){
   const container = document.getElementById('pieWrap');
   const byCat = {};
-  history.filter(h=>h.type==='expense').forEach(h=>{
+  filteredExpenses(statsFilter).forEach(h=>{
     byCat[h.category] = (byCat[h.category]||0) + Number(h.amount);
   });
   const entries = Object.entries(byCat).sort((a,b)=> b[1]-a[1]);
@@ -2516,7 +2516,7 @@ document.getElementById('exportBtn').addEventListener('click', async ()=>{
     const date = h.date ? new Date(h.date).toLocaleString('ar-EG') : '';
     csv += `${type},"${(h.name||'').replace(/"/g,'""')}","${label.replace(/"/g,'""')}",${h.amount},"${date}","${(h.note||'').replace(/"/g,'""')}"\n`;
   });
-  const ok = await saveFile('ميزان-الحركات.csv', '\uFEFF' + csv, 'text/csv;charset=utf-8;');
+  const ok = await saveFile('ميزان-الحركات.csv', csv, 'text/csv;charset=utf-8;');
   showToast(ok ? 'اتصدر الملف' : 'مقدرناش نحفظ الملف، جرّب تاني');
 });
 
@@ -2564,7 +2564,8 @@ document.getElementById('exportJsonBtn').addEventListener('click', async ()=>{
     balance, history, initialized, budgets, learned, currency, darkMode,
     lowBalanceThreshold, savingsGoals, recurring, recurAppliedMonths,
     customCategories, monthlyBudgetTotal, autoSaveGoalId, autoSavePercent,
-    lastWeeklySummary, lastMonthlySummary
+    lastWeeklySummary, lastMonthlySummary,
+    debts, lastDebtReminder, debtDeduct
   };
   const ok = await saveFile('ميزان-نسخة-احتياطية.json', JSON.stringify(data, null, 2), 'application/json');
   showToast(ok ? 'اتصدرت النسخة الاحتياطية' : 'مقدرناش نحفظ الملف، جرّب تاني');
@@ -2597,11 +2598,15 @@ document.getElementById('importJsonFile').addEventListener('change', (e)=>{
       autoSavePercent = parsed.autoSavePercent || null;
       lastWeeklySummary = parsed.lastWeeklySummary || null;
       lastMonthlySummary = parsed.lastMonthlySummary || null;
+      debts = parsed.debts || [];
+      lastDebtReminder = parsed.lastDebtReminder || null;
+      debtDeduct = parsed.debtDeduct !== false;
       document.getElementById('currencySelect').value = currency;
       document.getElementById('darkModeToggle').checked = darkMode;
       document.getElementById('lowBalanceInput').value = lowBalanceThreshold || '';
       document.getElementById('monthlyBudgetInput').value = monthlyBudgetTotal || '';
       document.getElementById('autoSavePercentInput').value = autoSavePercent || '';
+      document.getElementById('debtDeductToggle').checked = debtDeduct;
       populateCategorySelects();
       renderCustomCatList();
       populateAutoSaveGoalSelect();
