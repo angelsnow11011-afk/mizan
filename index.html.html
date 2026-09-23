@@ -12,34 +12,34 @@
 <meta property="og:description" content="سجّل مصاريفك، اعرف فلوسك رايحة فين، وحدّد أهداف ادخار — مجانًا.">
 <meta property="og:type" content="website">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Crect width='48' height='48' rx='11' fill='%231C2E28'/%3E%3Cg fill='none' stroke='%23C9A96E' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M24 11v26'/%3E%3Cpath d='M11 16h26'/%3E%3Cpath d='M16 37h16'/%3E%3Cpath d='M6 18c0 3.9 2.2 7 5 7s5-3.1 5-7'/%3E%3Cpath d='M32 18c0 3.9 2.2 7 5 7s5-3.1 5-7'/%3E%3C/g%3E%3C/svg%3E">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#1C2E28;
-    --ink-2:#2E4A3E;
-    --paper:#F4EFE3;
-    --paper-2:#FFFFFF;
-    --line:#D8CFB8;
-    --gold:#B08A3E;
-    --stamp:#B23A34;
-    --stamp-dark:#7C2622;
-    --good:#2E6B4F;
-    --good-bg:#E3EFE6;
-    --muted:#7A7364;
-    --warn:#B23A34;
+    --ink:#F2F2F5;
+    --ink-2:#FFFFFF;
+    --paper:#0C0D11;
+    --paper-2:#17181D;
+    --line:#26272E;
+    --gold:#9AF0C0;
+    --stamp:#FF6B6B;
+    --stamp-dark:#D94F4F;
+    --good:#34D399;
+    --good-bg:#0F2A22;
+    --muted:#8B8C96;
+    --warn:#FF6B6B;
   }
   body.dark{
-    --ink:#EDE6D6;
-    --ink-2:#C9A96E;
-    --paper:#14201C;
-    --paper-2:#1D2C26;
-    --line:#33453D;
-    --gold:#D4AF5A;
-    --stamp:#E0645C;
-    --stamp-dark:#C24940;
-    --good:#5FAE85;
-    --good-bg:#20372C;
-    --muted:#8FA098;
+    --ink:#F5F5F7;
+    --ink-2:#FFFFFF;
+    --paper:#000000;
+    --paper-2:#121317;
+    --line:#222329;
+    --gold:#9AF0C0;
+    --stamp:#FF7A7A;
+    --stamp-dark:#E05A5A;
+    --good:#3CE0A5;
+    --good-bg:#0D2A20;
+    --muted:#9394A0;
   }
   *{box-sizing:border-box}
   body{
@@ -53,15 +53,15 @@
     transition:background .2s,color .2s;
   }
   .topbar{
-    background:var(--ink);
-    color:var(--paper);
+    background:var(--paper);
+    color:var(--ink);
     padding:20px 20px 18px;
     position:relative;
+    border-bottom:1px solid var(--line);
   }
-  body.dark .topbar{background:#0C1512}
   .topbar-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-  .topbar h1{font-family:'Amiri',serif;font-size:26px;margin:0 0 2px;font-weight:700}
-  .topbar p{margin:0;color:#C9C2AC;font-size:13px}
+  .topbar h1{font-family:'Tajawal',sans-serif;font-weight:900;font-size:26px;margin:0 0 2px;font-weight:700}
+  .topbar p{margin:0;color:var(--muted);font-size:13px}
   .menu-btn{
     flex:0 0 auto;width:30px;height:30px;border-radius:7px;
     background:rgba(244,239,227,0.1);border:1px solid rgba(244,239,227,0.25);
@@ -84,7 +84,7 @@
   .stamp{
     flex:0 0 auto;width:88px;height:88px;border-radius:50%;border:3px solid var(--stamp);color:var(--stamp);
     display:flex;flex-direction:column;align-items:center;justify-content:center;transform:rotate(-8deg);
-    font-family:'Amiri',serif;position:relative;
+    font-family:'Tajawal',sans-serif;font-weight:900;position:relative;
   }
   .stamp::before{content:"";position:absolute;inset:6px;border:1px dashed var(--stamp);border-radius:50%;opacity:.55}
   .stamp .amt{font-size:17px;font-weight:700;line-height:1.1}
@@ -99,29 +99,28 @@
   .section-title{font-size:14px;color:var(--muted);margin:26px 2px 10px;display:flex;align-items:center;gap:8px}
   .section-title::after{content:"";flex:1;border-top:1px dashed var(--line)}
 
-  .card{background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .card{background:var(--paper-2);border:1px solid var(--line);border-radius:20px;padding:16px}
   .row2{display:flex;gap:10px}
   .field{flex:1;display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
   .field label{font-size:12px;color:var(--muted)}
   input[type=text],input[type=number],input[type=password],input[type=url],input[type=email],input[type=date],select,textarea{
-    font-family:'Tajawal',sans-serif;padding:10px 12px;border-radius:9px;border:1px solid var(--line);
-    background:var(--paper);font-size:14.5px;color:var(--ink);width:100%;outline:none;
+    font-family:'Tajawal',sans-serif;padding:13px 16px;border-radius:16px;border:1px solid var(--line);
+    background:var(--paper-2);font-size:14.5px;color:var(--ink);width:100%;outline:none;
   }
   input:focus,select:focus,textarea:focus{border-color:var(--gold)}
   .cat-suggest{font-size:11.5px;color:var(--gold);margin-top:2px;min-height:14px}
   button.add-btn{
-    width:100%;background:var(--ink-2);color:#fff;border:none;padding:12px;border-radius:9px;
+    width:100%;background:var(--ink-2);color:var(--paper);border:none;padding:14px;border-radius:999px;
     font-family:'Tajawal',sans-serif;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;
   }
-  body.dark button.add-btn{color:#0C1512}
   button.add-btn:active{opacity:.85}
   button.outline-btn{
     width:100%;background:transparent;color:var(--ink-2);border:1px solid var(--ink-2);padding:11px;
-    border-radius:9px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;cursor:pointer;
+    border-radius:999px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;cursor:pointer;
   }
   button.small-btn{
     background:var(--paper);color:var(--ink-2);border:1px solid var(--line);padding:7px 12px;
-    border-radius:8px;font-family:'Tajawal',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;
+    border-radius:999px;font-family:'Tajawal',sans-serif;font-size:12.5px;font-weight:700;cursor:pointer;
   }
   button.danger-link{background:none;border:none;color:var(--stamp);font-size:12px;cursor:pointer;text-decoration:underline}
 
@@ -140,16 +139,16 @@
   .del-btn:hover{color:var(--stamp)}
   .empty{text-align:center;color:var(--muted);font-size:13.5px;padding:20px 0}
   .toast{
-    position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);
-    padding:9px 18px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;
-    z-index:400;max-width:90%;text-align:center;
+    position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink-2);color:var(--paper);
+    padding:10px 20px;border-radius:999px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;
+    z-index:400;max-width:90%;text-align:center;font-weight:700;
   }
   .toast.show{opacity:1}
 
-  .overlay{position:fixed;inset:0;background:rgba(20,26,22,0.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:300}
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;padding:20px;z-index:300}
   .overlay.hidden{display:none}
-  .modal{background:var(--paper-2);border-radius:16px;padding:20px;width:100%;max-width:380px;position:relative;box-shadow:0 12px 30px rgba(0,0,0,0.25)}
-  .modal h2{font-family:'Amiri',serif;font-size:19px;margin:0 0 4px 36px}
+  .modal{background:var(--paper-2);border-radius:24px;padding:20px;width:100%;max-width:380px;position:relative;box-shadow:0 12px 30px rgba(0,0,0,0.5)}
+  .modal h2{font-family:'Tajawal',sans-serif;font-weight:900;font-size:19px;margin:0 0 4px 36px}
   .modal p.sub{margin:0 0 16px;font-size:13px;color:var(--muted)}
   .modal-close{
     position:absolute;top:12px;left:12px;width:28px;height:28px;border-radius:50%;background:var(--paper);
@@ -166,14 +165,13 @@
     font-weight:700;cursor:pointer;padding:6px 4px 6px 0;display:flex;align-items:center;gap:3px;flex:0 0 auto;
   }
   .view-back-row .back-link:hover{text-decoration:underline}
-  .view-back-row h2{font-family:'Amiri',serif;font-size:19px;margin:0;flex:1}
+  .view-back-row h2{font-family:'Tajawal',sans-serif;font-weight:900;font-size:19px;margin:0;flex:1}
   .full-page-body{padding:18px 16px 0;max-width:520px;margin:0 auto}
   .full-page-body p.sub{margin:0 0 18px;font-size:13.5px;color:var(--muted)}
 
   .filter-tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
   .filter-tab{padding:7px 14px;border-radius:20px;border:1px solid var(--line);background:var(--paper-2);font-size:13px;color:var(--muted);cursor:pointer}
-  .filter-tab.active{background:var(--ink-2);color:#fff;border-color:var(--ink-2)}
-  body.dark .filter-tab.active{color:#0C1512}
+  .filter-tab.active{background:var(--ink-2);color:var(--paper);border-color:var(--ink-2)}
 
   .top-cards{display:flex;gap:10px;margin-bottom:20px}
   .top-card{flex:1;background:var(--paper-2);border:1px solid var(--line);border-radius:12px;padding:12px;text-align:center}
@@ -236,11 +234,7 @@
   .recur-info b{font-size:14px;display:block}
   .recur-info span{font-size:12px;color:var(--muted)}
 
-  .login-screen{position:fixed;inset:0;background:var(--ink);display:flex;align-items:center;justify-content:center;z-index:500;padding:20px}
-  body.dark .login-screen{background:#0C1512}
-  .login-box{background:var(--paper-2);border-radius:16px;padding:26px;width:100%;max-width:340px;text-align:center}
-  .login-box h1{font-family:'Amiri',serif;font-size:24px;margin:0 0 4px}
-  .login-box p{font-size:13px;color:var(--muted);margin:0 0 18px}
+  .login-screen{position:fixed;inset:0;background:var(--paper);display:flex;align-items:center;justify-content:center;z-index:500;padding:20px}
 
   /* ---------- إضافات جديدة ---------- */
   .filter-row{display:flex;gap:8px;margin-bottom:10px}
@@ -290,32 +284,35 @@
     display:flex;align-items:center;justify-content:center;
   }
   .brand-text{min-width:0}
-  .topbar .brand-name{font-family:'Amiri',serif;font-size:25px;line-height:1.1;font-weight:700;letter-spacing:.5px;margin:0}
-  .topbar .brand-tag{margin:2px 0 0;font-size:12.5px;color:#C9C2AC}
+  .topbar .brand-name{font-family:'Tajawal',sans-serif;font-weight:900;font-size:25px;line-height:1.1;font-weight:700;letter-spacing:.5px;margin:0}
+  .topbar .brand-tag{margin:2px 0 0;font-size:12.5px;color:var(--muted)}
   .plan-chip{
     align-self:flex-start;font-size:10.5px;padding:3px 9px;border-radius:20px;
     border:1px solid rgba(201,169,110,0.5);color:var(--gold);white-space:nowrap;
   }
 
   .login-screen{flex-direction:column;gap:18px;overflow-y:auto;padding:32px 20px}
-  .login-crest{display:flex;flex-direction:column;align-items:center;gap:8px;color:var(--paper)}
-  body.dark .login-crest{color:var(--ink)}
-  .login-crest .mark-ring{
-    width:66px;height:66px;border-radius:50%;
-    background:rgba(201,169,110,0.12);border:1px solid rgba(201,169,110,0.45);
+  .login-wrap{width:100%;max-width:360px;text-align:right}
+  .login-topmark{display:flex;align-items:center;gap:8px;margin-bottom:32px;font-weight:900;font-size:15px;color:var(--ink)}
+  .login-topmark .mark-box-sm{
+    width:28px;height:28px;border-radius:9px;flex:0 0 auto;
+    background:var(--paper-2);border:1px solid var(--line);color:var(--gold);
     display:flex;align-items:center;justify-content:center;
   }
-  .login-crest .ttl{font-family:'Amiri',serif;font-size:30px;font-weight:700;letter-spacing:1px;line-height:1}
-  .login-crest .sub{font-size:13px;color:#B8B2A0}
-  .login-box{box-shadow:0 18px 40px rgba(0,0,0,0.28);text-align:right}
-  .login-box h2{font-family:'Tajawal',sans-serif;font-size:16px;font-weight:700;margin:0 0 2px}
-  .login-box .hint{font-size:12.5px;color:var(--muted);margin:0 0 16px}
+  .login-heading{font-family:'Tajawal',sans-serif;font-weight:900;font-size:30px;margin:0 0 6px;line-height:1.25;color:var(--ink-2)}
+  .login-screen .hint{font-size:13.5px;color:var(--muted);margin:0 0 26px}
+  .input-icon-field{position:relative}
+  .input-icon-field input{padding-right:46px}
+  .input-icon-field .field-ic{
+    position:absolute;top:38px;right:15px;color:var(--muted);display:flex;align-items:center;pointer-events:none;
+  }
+  .login-bottom-row{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12.5px;color:var(--muted);margin-top:10px}
   .login-note{font-size:11.5px;color:var(--muted);margin:12px 0 0;line-height:1.6;text-align:center}
-  .login-foot{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;color:#9A9384}
+  .login-foot{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
   .linkish{background:none;border:none;color:var(--gold);font-family:'Tajawal',sans-serif;font-size:11.5px;cursor:pointer;text-decoration:underline;padding:0}
 
   .site-foot{max-width:520px;margin:34px auto 0;padding:18px 16px 4px;border-top:1px dashed var(--line);text-align:center;color:var(--muted);font-size:11.5px;line-height:1.8}
-  .site-foot .co{font-family:'Amiri',serif;font-size:14px;color:var(--ink-2)}
+  .site-foot .co{font-family:'Tajawal',sans-serif;font-weight:900;font-size:14px;color:var(--ink-2)}
 
   .about-list{display:flex;flex-direction:column;gap:10px;margin:0 0 14px;padding:0;list-style:none;font-size:13.5px}
   .about-list li{display:flex;gap:8px;align-items:flex-start;color:var(--ink)}
@@ -391,37 +388,46 @@
 <body>
 
 <div class="login-screen" id="loginScreen">
+  <div class="login-wrap">
+    <div class="login-topmark">
+      <span class="mark-box-sm">
+        <svg viewBox="0 0 48 48" width="16" height="16" aria-hidden="true">
+          <g fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round">
+            <path d="M24 11v26"/><path d="M11 16h26"/><path d="M16 37h16"/>
+            <path d="M6 18c0 3.9 2.2 7 5 7s5-3.1 5-7"/>
+            <path d="M32 18c0 3.9 2.2 7 5 7s5-3.1 5-7"/>
+          </g>
+        </svg>
+      </span>
+      <span>ميزان</span>
+    </div>
 
-  <div class="login-crest">
-    <span class="mark-ring">
-      <svg class="mark" viewBox="0 0 48 48" width="34" height="34" aria-hidden="true">
-        <g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-          <path d="M24 11v26"/><path d="M11 16h26"/><path d="M16 37h16"/>
-          <path d="M6 18c0 3.9 2.2 7 5 7s5-3.1 5-7"/>
-          <path d="M32 18c0 3.9 2.2 7 5 7s5-3.1 5-7"/>
-        </g>
-      </svg>
-    </span>
-    <div class="ttl">ميزان</div>
-    <div class="sub">دفتر مصاريفك اليومي</div>
-  </div>
+    <h1 class="login-heading" id="authTitle">أهلاً بيك تاني</h1>
+    <p class="hint" id="authHint">سجّل دخولك بإيميلك وكلمة المرور.</p>
 
-  <div class="login-box">
-    <h2 id="authTitle">تسجيل الدخول</h2>
-    <p class="hint" id="authHint">ادخل بإيميلك وكلمة المرور بتاعتك.</p>
-    <div class="field">
+    <div class="field input-icon-field">
       <label for="loginUser">الإيميل</label>
+      <span class="field-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 6.5l8.5 6.5 8.5-6.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
       <input type="email" id="loginUser" autocomplete="username" placeholder="you@example.com" dir="ltr" style="text-align:left">
     </div>
-    <div class="field">
+    <div class="field input-icon-field">
       <label for="loginPass">كلمة المرور</label>
-      <input type="password" id="loginPass" autocomplete="current-password" placeholder="كلمة المرور (6 حروف/أرقام على الأقل)" dir="ltr" style="text-align:left">
+      <span class="field-ic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 018 0v3" stroke-linecap="round"/></svg>
+      </span>
+      <input type="password" id="loginPass" autocomplete="current-password" placeholder="كلمة المرور" dir="ltr" style="text-align:left">
     </div>
+
     <button class="add-btn" id="loginBtn">دخول</button>
     <div class="cat-suggest" id="loginError" role="alert" aria-live="polite" style="color:var(--stamp);text-align:center"></div>
-    <div class="login-foot" style="margin-top:14px;gap:4px">
-      <button class="linkish" id="authToggleBtn" type="button">معندكش حساب؟ اعمل واحد جديد</button>
-      <button class="linkish" id="forgotPassBtn" type="button">نسيت كلمة المرور؟</button>
+
+    <button class="linkish" id="forgotPassBtn" type="button" style="display:block;margin:16px auto 0">نسيت كلمة المرور؟</button>
+
+    <div class="login-bottom-row">
+      <span>معندكش حساب؟</span>
+      <button class="linkish" id="authToggleBtn" type="button">اعمل واحد جديد</button>
     </div>
   </div>
 
@@ -432,27 +438,30 @@
 </div>
 
 <div class="login-screen" id="verifyScreen" style="display:none">
-  <div class="login-crest">
-    <span class="mark-ring">
-      <svg class="mark" viewBox="0 0 48 48" width="34" height="34" aria-hidden="true">
-        <g fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
-          <path d="M24 11v26"/><path d="M11 16h26"/><path d="M16 37h16"/>
-          <path d="M6 18c0 3.9 2.2 7 5 7s5-3.1 5-7"/>
-          <path d="M32 18c0 3.9 2.2 7 5 7s5-3.1 5-7"/>
-        </g>
-      </svg>
-    </span>
-    <div class="ttl">ميزان</div>
-    <div class="sub">دفتر مصاريفك اليومي</div>
-  </div>
+  <div class="login-wrap">
+    <div class="login-topmark">
+      <span class="mark-box-sm">
+        <svg viewBox="0 0 48 48" width="16" height="16" aria-hidden="true">
+          <g fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round">
+            <path d="M24 11v26"/><path d="M11 16h26"/><path d="M16 37h16"/>
+            <path d="M6 18c0 3.9 2.2 7 5 7s5-3.1 5-7"/>
+            <path d="M32 18c0 3.9 2.2 7 5 7s5-3.1 5-7"/>
+          </g>
+        </svg>
+      </span>
+      <span>ميزان</span>
+    </div>
 
-  <div class="login-box">
-    <h2>أكّد إيميلك</h2>
+    <h1 class="login-heading">أكّد إيميلك</h1>
     <p class="hint">بعتنالك رابط تأكيد على <b id="verifyEmailLabel" dir="ltr" style="unicode-bidi:embed"></b>. افتح الإيميل ودوس على الرابط، وبعدين ارجع هنا ودوس "تحقق تاني".</p>
+
     <button class="add-btn" id="verifyCheckBtn">تحقق تاني</button>
     <div class="cat-suggest" id="verifyError" role="alert" aria-live="polite" style="color:var(--stamp);text-align:center"></div>
-    <div class="login-foot" style="margin-top:14px;gap:4px">
+
+    <div class="login-bottom-row">
       <button class="linkish" id="verifyResendBtn" type="button">مبعتليش حاجة؟ ابعته تاني</button>
+    </div>
+    <div class="login-bottom-row">
       <button class="linkish" id="verifyLogoutBtn" type="button">دخلت بإيميل غلط؟ سجّل خروج</button>
     </div>
   </div>
