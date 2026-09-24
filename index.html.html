@@ -125,6 +125,20 @@
   }
   button.danger-link{background:none;border:none;color:var(--stamp);font-size:12px;cursor:pointer;text-decoration:underline}
 
+  button.voice-btn{
+    width:100%;background:var(--paper);color:var(--ink-2);border:1.5px dashed var(--gold);
+    padding:11px;border-radius:9px;font-family:'Tajawal',sans-serif;font-size:14px;font-weight:700;
+    cursor:pointer;margin-bottom:6px;display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:background .2s,border-color .2s,color .2s;
+  }
+  button.voice-btn:hover{border-color:var(--stamp)}
+  button.voice-btn.listening{
+    background:var(--stamp);color:#fff;border-color:var(--stamp);border-style:solid;
+    animation:voicePulse 1.1s ease-in-out infinite;
+  }
+  @keyframes voicePulse{0%,100%{opacity:1}50%{opacity:.6}}
+  .voice-hint{font-size:11px;color:var(--muted);text-align:center;margin:0 0 14px}
+
   .tx-list{display:flex;flex-direction:column}
   .tx{display:flex;justify-content:space-between;align-items:center;padding:13px 4px;border-bottom:1px dashed var(--line);gap:10px}
   .tx:last-child{border-bottom:none}
@@ -525,6 +539,8 @@
 
   <div class="section-title">صرفت على إيه؟</div>
   <div class="card">
+    <button class="voice-btn" id="voiceAddBtn" type="button">🎤 أضف بصوتك</button>
+    <p class="voice-hint" id="voiceHint">قول مثلاً: "اشتريت شاورما بخمسين جنيه"</p>
     <div class="field">
       <label>اسم المنتج</label>
       <input type="text" id="itemName" placeholder="مثال: شاورما، أوبر، فاتورة نت">
@@ -1761,6 +1777,213 @@ document.getElementById('itemName').addEventListener('input', (e)=>{
     suggestEl.textContent = '';
   }
 });
+
+// ---------- VOICE INPUT ----------
+const AR_NUM_WORDS = {
+  'صفر':0,
+  'واحد':1,'واحدة':1,'وحدة':1,
+  'اتنين':2,'إتنين':2,'اثنين':2,'إثنين':2,
+  'تلاتة':3,'ثلاثة':3,'تلاته':3,'ثلاثه':3,
+  'اربعة':4,'أربعة':4,'اربعه':4,'أربعه':4,
+  'خمسة':5,'خمسه':5,
+  'ستة':6,'سته':6,
+  'سبعة':7,'سبعه':7,
+  'تمانية':8,'ثمانية':8,'تمانيه':8,'ثمانيه':8,
+  'تسعة':9,'تسعه':9,
+  'عشرة':10,'عشره':10,
+  'حداشر':11,'احداشر':11,'إحداشر':11,
+  'اتناشر':12,'اثناشر':12,
+  'تلتاشر':13,'ثلاثتاشر':13,
+  'اربعتاشر':14,'أربعتاشر':14,
+  'خمستاشر':15,
+  'ستاشر':16,
+  'سبعتاشر':17,
+  'تمنتاشر':18,'ثمانتاشر':18,
+  'تسعتاشر':19,
+  'عشرين':20,
+  'تلاتين':30,'ثلاثين':30,
+  'اربعين':40,'أربعين':40,
+  'خمسين':50,
+  'ستين':60,
+  'سبعين':70,
+  'تمانين':80,'ثمانين':80,
+  'تسعين':90,
+  'مية':100,'مائة':100,'ميه':100,
+  'ميتين':200,'مئتين':200,
+  'تلتميه':300,'تلتمية':300,'ثلاثمية':300,'ثلاثمائة':300,
+  'اربعميه':400,'اربعمية':400,'أربعمائة':400,
+  'خمسميه':500,'خمسمية':500,'خمسمائة':500,
+  'ستميه':600,'ستمية':600,'ستمائة':600,
+  'سبعميه':700,'سبعمية':700,'سبعمائة':700,
+  'تمنميه':800,'تمانميه':800,'ثمانمائة':800,
+  'تسعميه':900,'تسعمية':900,'تسعمائة':900,
+  'الف':1000,'ألف':1000,'الاف':1000,'آلاف':1000,
+  'الفين':2000,'ألفين':2000
+};
+
+function parseVoiceExpense(rawText){
+  let text = (rawText || '').trim();
+
+  // 1) split off a trailing note section, e.g. "... ملاحظة كانت مع صاحبي"
+  let note = '';
+  const noteIdx = text.search(/ملاحظ/);
+  if(noteIdx !== -1){
+    note = text.slice(noteIdx).replace(/^[^\s]*\s*/, '').trim();
+    text = text.slice(0, noteIdx).trim();
+  }
+
+  // 2) normalize Arabic-Indic digits (٠-٩) to Western digits, just in case
+  const easternDigits = '٠١٢٣٤٥٦٧٨٩';
+  text = text.replace(/[٠-٩]/g, d => String(easternDigits.indexOf(d)));
+
+  // 3) prefer an explicit digit price if the engine transcribed one
+  let price = null;
+  const digitMatch = text.match(/\d+(?:[.,]\d+)?/);
+  if(digitMatch){
+    price = parseFloat(digitMatch[0].replace(',', '.'));
+    text = text.replace(digitMatch[0], ' ');
+  }
+
+  // 4) look for an explicit category name mentioned by the user
+  const cats = [...allCategories()].sort((a,b)=> b.length - a.length);
+  let explicitCat = null;
+  for(const c of cats){
+    if(text.includes(c)){
+      explicitCat = c;
+      text = text.split(c).join(' ');
+      break;
+    }
+  }
+
+  let tokens = text.split(/\s+/).filter(Boolean);
+
+  // 5) if no digit price was found, try to read a spoken Arabic number
+  if(price === null){
+    let total = 0, current = 0, matchedAny = false;
+    const consumed = [];
+    tokens.forEach((tok, i)=>{
+      let clean = tok;
+      if(clean.startsWith('و') && clean.length > 1 && AR_NUM_WORDS[clean.slice(1)] !== undefined){
+        clean = clean.slice(1);
+      }
+      const val = AR_NUM_WORDS[clean];
+      if(val === undefined) return;
+      matchedAny = true;
+      consumed.push(i);
+      if(val === 100 || val === 1000){
+        current = (current === 0 ? 1 : current) * val;
+        if(val === 1000){ total += current; current = 0; }
+      } else {
+        current += val;
+      }
+    });
+    if(matchedAny){
+      price = total + current;
+      tokens = tokens.filter((_, i)=> !consumed.includes(i));
+    }
+  }
+
+  // 6) strip filler words to leave the item name
+  const stopWords = new Set([
+    'اشتريت','صرفت','دفعت','خدت','اخدت','هاخد','جبت','هجيب','اجبت',
+    'جنيه','جنية','جنيها','جنيهات','ج.م','ريال','ريالات','دولار','دولارات','درهم','دراهم','دينار','دنانير',
+    'بس','تقريبا','تقريباً','حوالي','في','من','تحت','صنف','تصنيف','على','ب','بـ','و'
+  ]);
+  const name = tokens
+    .filter(t => t && !stopWords.has(t))
+    .join(' ')
+    .replace(/\s+/g,' ')
+    .trim();
+
+  return {
+    name: name || rawText.trim(),
+    price,
+    category: explicitCat,
+    note
+  };
+}
+
+let voiceRecognition = null;
+let voiceListening = false;
+
+function setVoiceBtnState(listening){
+  const btn = document.getElementById('voiceAddBtn');
+  if(!btn) return;
+  btn.classList.toggle('listening', listening);
+  btn.textContent = listening ? '🎙️ بسمعك... قول الصرفة' : '🎤 أضف بصوتك';
+}
+
+function applyVoiceTranscript(transcript){
+  const parsed = parseVoiceExpense(transcript);
+
+  document.getElementById('itemName').value = parsed.name;
+  if(parsed.price !== null && !isNaN(parsed.price)){
+    document.getElementById('itemPrice').value = parsed.price;
+  }
+
+  const cat = parsed.category || detectCategory(parsed.name) || '';
+  if(cat){
+    document.getElementById('itemCat').value = cat;
+    document.getElementById('catSuggest').textContent = parsed.category
+      ? 'اتحدد الصنف زي ما قلت: ' + cat
+      : 'تم اختيار الصنف تلقائيا: ' + cat;
+  }
+
+  if(parsed.note){
+    document.getElementById('itemNote').value = parsed.note;
+    const box = document.getElementById('moreFields');
+    if(box.classList.contains('is-hidden')){
+      box.classList.remove('is-hidden');
+      document.getElementById('moreFieldsBtn').textContent = '− إخفاء الملاحظة والنوع';
+    }
+  }
+
+  const summaryParts = [
+    parsed.name || '(معرفتش الاسم)',
+    parsed.price !== null ? fmtMoney(parsed.price) : 'من غير سعر — اكتبه بنفسك'
+  ];
+  showToast('🎤 فهمت: ' + summaryParts.join(' · ') + ' — راجع واضغط "إضافة الصرفة"');
+}
+
+function initVoiceRecognition(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const btn = document.getElementById('voiceAddBtn');
+  const hint = document.getElementById('voiceHint');
+  if(!SR){
+    if(btn) btn.style.display = 'none';
+    if(hint) hint.style.display = 'none';
+    return;
+  }
+  voiceRecognition = new SR();
+  voiceRecognition.lang = 'ar-EG';
+  voiceRecognition.interimResults = false;
+  voiceRecognition.maxAlternatives = 1;
+
+  voiceRecognition.onresult = (e)=>{
+    const transcript = e.results[0][0].transcript;
+    applyVoiceTranscript(transcript);
+  };
+  voiceRecognition.onerror = (e)=>{
+    voiceListening = false;
+    setVoiceBtnState(false);
+    if(e.error === 'no-speech') showToast('معملتش أي صوت، جرّب تاني');
+    else if(e.error === 'not-allowed' || e.error === 'service-not-allowed') showToast('محتاجين إذن الميكروفون عشان الخاصية دي تشتغل');
+    else showToast('حصلت مشكلة في التسجيل الصوتي، جرّب تاني');
+  };
+  voiceRecognition.onend = ()=>{
+    voiceListening = false;
+    setVoiceBtnState(false);
+  };
+
+  btn.addEventListener('click', ()=>{
+    if(voiceListening) return;
+    voiceListening = true;
+    setVoiceBtnState(true);
+    try{ voiceRecognition.start(); }
+    catch(e){ voiceListening = false; setVoiceBtnState(false); }
+  });
+}
+initVoiceRecognition();
 
 document.getElementById('addBtn').addEventListener('click', async ()=>{
   const name = document.getElementById('itemName').value.trim();
