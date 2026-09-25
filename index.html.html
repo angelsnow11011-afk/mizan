@@ -158,6 +158,18 @@
     padding:9px 18px;border-radius:20px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;
     z-index:400;max-width:90%;text-align:center;
   }
+
+  #aiFab{
+    position:fixed;bottom:20px;left:16px;width:56px;height:56px;border-radius:50%;
+    background:var(--stamp);color:#fff;border:none;font-size:24px;cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,.28);z-index:480;display:flex;align-items:center;justify-content:center;
+  }
+  #aiFab.listening{animation:voicePulse 1.1s ease-in-out infinite}
+  #aiFab.thinking{opacity:.7}
+  #aiStatus{
+    position:fixed;bottom:84px;left:16px;max-width:260px;background:var(--ink);color:var(--paper);
+    padding:8px 12px;border-radius:12px;font-size:12.5px;z-index:480;display:none;text-align:right;
+  }
   .toast.show{opacity:1}
 
   .overlay{position:fixed;inset:0;background:rgba(20,26,22,0.55);display:flex;align-items:center;justify-content:center;padding:20px;z-index:300}
@@ -834,6 +846,14 @@
       </div>
     </div>
 
+    <div class="section-title">المساعد الذكي بالصوت</div>
+    <div class="card">
+      <div class="settings-row" style="flex-direction:column;align-items:stretch;gap:6px">
+        <label>مفتاح Gemini API (بيتخزن على جهازك بس، مش في الكود)</label>
+        <input type="password" id="aiApiKeyInput" placeholder="الصق مفتاح Gemini هنا" autocomplete="off">
+      </div>
+    </div>
+
     <div class="section-title">نسخ احتياطي للبيانات</div>
     <div class="card">
       <button class="outline-btn" id="exportJsonBtn">تصدير نسخة احتياطية (JSON)</button>
@@ -867,6 +887,8 @@
 
 </div>
 
+<button id="aiFab" type="button" title="المساعد الذكي بالصوت">🤖</button>
+<div id="aiStatus"></div>
 <div class="toast" id="toast"></div>
 
 <div class="overlay hidden" id="aboutOverlay">
@@ -3065,6 +3087,133 @@ function renderRecurring(){
     });
   });
 }
+
+// ---------- AI VOICE ASSISTANT ----------
+function getAiApiKey(){ return localStorage.getItem('mizanGeminiKey') || ''; }
+const aiApiKeyInput = document.getElementById('aiApiKeyInput');
+if(aiApiKeyInput){
+  aiApiKeyInput.value = getAiApiKey();
+  aiApiKeyInput.addEventListener('change', ()=>{
+    localStorage.setItem('mizanGeminiKey', aiApiKeyInput.value.trim());
+    showToast('اتحفظ مفتاح الذكاء الاصطناعي على جهازك');
+  });
+}
+
+function setAiStatus(text, show){
+  const box = document.getElementById('aiStatus');
+  if(!box) return;
+  box.textContent = text || '';
+  box.style.display = show ? 'block' : 'none';
+}
+
+function findDebtByName(name){
+  if(!name) return null;
+  const n = name.trim().toLowerCase();
+  return debts.find(d=> d.name.toLowerCase().includes(n) || n.includes(d.name.toLowerCase())) || null;
+}
+
+async function callGeminiAI(transcript){
+  const key = getAiApiKey();
+  if(!key){ showToast('محتاج تحط مفتاح Gemini API في الإعدادات الأول'); return null; }
+
+  const debtsList = debts.map(d=> ({id:d.id, name:d.name, type:d.type||'owe', remaining: debtRemaining(d)}));
+  const sys = `انت مساعد داخل تطبيق "ميزان" لإدارة الفلوس. مهمتك تفهم أمر المستخدم بالصوت وترجعه كـ JSON فقط بدون أي كلام زيادة.
+الصيغة المطلوبة بالظبط:
+{"actions":[{"type":"expense|income|debt_add|debt_pay","name":"...","amount":رقم,"category":"اسم صنف من القايمة لو النوع expense وإلا سيبه فاضي","debtType":"owe|owed لو النوع debt_add","debtId":"لو النوع debt_pay واتعرف الدين من القايمة حط الـ id بتاعه هنا وإلا سيبه فاضي","note":"..."}],"reply":"جملة قصيرة تأكيد بالمصري"}
+لو الأمر مش واضح أو مفيهوش رقم فلوس، رجّع actions فاضية [] وفي reply اشرح المشكلة باختصار.
+الأصناف المتاحة: ${allCategories().join('، ')}
+الديون الحالية: ${JSON.stringify(debtsList)}
+الرصيد الحالي: ${balance} ${currency}`;
+
+  try{
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + encodeURIComponent(key), {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        systemInstruction:{parts:[{text:sys}]},
+        contents:[{role:'user', parts:[{text: transcript}]}],
+        generationConfig:{responseMimeType:'application/json'}
+      })
+    });
+    const data = await res.json();
+    if(data.error){ showToast('مشكلة في مفتاح أو طلب الذكاء الاصطناعي'); return null; }
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if(!text) return null;
+    return JSON.parse(text);
+  }catch(e){
+    showToast('مقدرناش نوصل لسيرفر الذكاء الاصطناعي');
+    return null;
+  }
+}
+
+async function executeAiActions(result){
+  if(!result || !Array.isArray(result.actions) || result.actions.length === 0){
+    showToast((result && result.reply) || 'معرفتش أنفذ الأمر ده');
+    return;
+  }
+  for(const act of result.actions){
+    const amount = Number(act.amount);
+    if(act.type === 'expense' && amount > 0){
+      const cat = allCategories().includes(act.category) ? act.category : (detectCategory(act.name||'') || allCategories()[0]);
+      history.push({type:'expense', name: act.name || 'صرفة', category: cat, amount, date: new Date().toISOString(), note: act.note || '', tag:''});
+      balance = computeBalance();
+    } else if(act.type === 'income' && amount > 0){
+      await addIncomeEntry(amount, act.name || 'إضافة فلوس', act.note || '');
+    } else if(act.type === 'debt_add' && amount > 0){
+      debts.push({id: Date.now().toString(), name: act.name || 'دين', amount, paid:0, due:null, note: act.note || '', type: act.debtType === 'owed' ? 'owed' : 'owe'});
+    } else if(act.type === 'debt_pay' && amount > 0){
+      const d = (act.debtId && debts.find(x=>x.id===act.debtId)) || findDebtByName(act.name);
+      if(d) await payDebt(d.id, amount);
+    }
+  }
+  await saveData();
+  render();
+  showToast('🤖 ' + (result.reply || 'اتنفذ الأمر'));
+}
+
+let aiRecognition = null;
+let aiListening = false;
+function initAiAssistant(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const fab = document.getElementById('aiFab');
+  if(!fab) return;
+  if(!SR){ fab.style.display = 'none'; return; }
+  aiRecognition = new SR();
+  aiRecognition.lang = 'ar-EG';
+  aiRecognition.interimResults = false;
+  aiRecognition.maxAlternatives = 1;
+
+  aiRecognition.onresult = async (e)=>{
+    const transcript = e.results[0][0].transcript;
+    setAiStatus('سامعك: ' + transcript, true);
+    fab.classList.add('thinking');
+    const result = await callGeminiAI(transcript);
+    fab.classList.remove('thinking');
+    setAiStatus('', false);
+    if(result) await executeAiActions(result);
+  };
+  aiRecognition.onerror = (e)=>{
+    aiListening = false;
+    fab.classList.remove('listening');
+    setAiStatus('', false);
+    if(e.error === 'not-allowed' || e.error === 'service-not-allowed') showToast('محتاجين إذن الميكروفون');
+  };
+  aiRecognition.onend = ()=>{
+    aiListening = false;
+    fab.classList.remove('listening');
+  };
+
+  fab.addEventListener('click', ()=>{
+    if(!getAiApiKey()){ showToast('حط مفتاح Gemini API في الإعدادات الأول'); return; }
+    if(aiListening) return;
+    aiListening = true;
+    fab.classList.add('listening');
+    setAiStatus('بسمعك...', true);
+    try{ aiRecognition.start(); }
+    catch(e){ aiListening = false; fab.classList.remove('listening'); setAiStatus('', false); }
+  });
+}
+initAiAssistant();
 </script>
 </body>
 </html>
